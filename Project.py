@@ -13,6 +13,7 @@ import pygame
 pygame.init()
 import time
 import random
+import tkMessageBox
 #######################################################################################################
 
 ############################## CONSTANTS ##############################################################
@@ -31,7 +32,7 @@ pygame.display.set_caption('LUDO - Main Menu')
 image = pygame.image.load('ludo.jpg')
 pygame.display.set_icon(image)
 clock = pygame.time.Clock()
-FPS = 15
+FPS = 7
 medfont = pygame.font.SysFont("comicsansms",50)
 SAFE_ZONE = [2,15,28,40]  # Pawns cannot be captured here
 RED_ROAD = [53,54,55,56,57,58]
@@ -82,7 +83,10 @@ for i in range(72,77): #green
     PATH.append((PATH[i-1][0],PATH[i-1][1] - SQUARE_SIZE))
 #######################################################################################################
 def roll():  #rolling the dice
-    return random.choice([1,2,3,4,5,6])
+    dice = random.choice([1,2,3,4,5,6])
+    pygame.draw.rect(gameDisplay,BLACK,(500,0,DISPLAY_WIDTH-500,50))
+    message_to_screen(color = WHITE, msg = str(dice), where_text = (DISPLAY_WIDTH-100,22) )
+    return dice
 
 # this brings back the coins back to the original position
 # this function also empties the path
@@ -114,7 +118,7 @@ def drawcoins(position): #to draw coints on the board
         else:
             color = YELLOW
         for j in position[i]:
-            if j != None:
+            if j != None and j not in [PATH[58],PATH[64],PATH[70],PATH[76]]:
                 pygame.draw.circle(gameDisplay,BLACK,j,COIN_RADIUS,5)
                 #above one gives a black boder
                 #next one fills it with color
@@ -122,7 +126,7 @@ def drawcoins(position): #to draw coints on the board
 
 
 def distance(point1,point2): # to calculate distance between 2 points
-    x1 = point1[0]*1.0
+    x1 = point1[0]
     x2 = point2[0]
     y1 = point1[1]
     y2 = point2[1]
@@ -139,43 +143,116 @@ def detect_square_number(PATH,coin):
     for i in range(1,len(PATH)):
         if PATH[i] == coin:
             return i
-    return -1
+    return False
 def coin_move(position,coin_selected,move):
         color = coin_selected[0][0]
         coin_number = coin_selected[0][1]
-        print 'here',color,coin_number,move
-        temp = detect_square_number(PATH,position[color][coin_number])
-        if temp == -1:
-            if color == 'red':
-              position[color][coin_number] = PATH[2]
-            elif color == 'blue':
-               position[color][coin_number] = PATH[15]
-            elif color == 'green':
-                position[color][coin_number] = PATH[41]
-            else:
-                position[color][coin_number] = PATH[28]
-        #position[color][coin_number] = PATH[ + move]
+        did_coin_start = detect_square_number(PATH,position[color][coin_number])
+        if not did_coin_start:
+            if move == 6:
+                if color == 'red':
+                  position[color][coin_number] = PATH[2]
+                elif color == 'blue':
+                   position[color][coin_number] = PATH[15]
+                elif color == 'green':
+                    position[color][coin_number] = PATH[41]
+                else:
+                    position[color][coin_number] = PATH[28]
+        else:
+            #if isvalid(did_coin_start,color,move):
+            if color == 'blue' and 8<=did_coin_start<=13 and did_coin_start + move >13:
+                change = move - (13 - did_coin_start)
+                position['blue'][coin_number] = PATH[58+change]
+            elif color == 'green' and 34<=did_coin_start<=39 and did_coin_start + move >39:
+                change = move - (39 - did_coin_start)
+                position['blue'][coin_number] = PATH[70 +change]
+            elif color == 'yellow' and 21<=did_coin_start<=26 and did_coin_start + move >26:
+                change = move - (26 - did_coin_start)
+                position['blue'][coin_number] = PATH[64+change]
+            elif color == 'red' and did_coin_start>52 and did_coin_start + move > 58:
+                pass
+            elif color == 'green' and did_coin_start>=71 and did_coin_start + move > 76:
+                pass
+            elif color == 'blue' and did_coin_start>=59 and did_coin_start + move > 64:
+                pass
+            elif color == 'yellow' and did_coin_start>=65 and did_coin_start + move > 76:
+                pass
+            else: position[color][coin_number] = PATH[did_coin_start + move]
+        print color,coin_number,move
+        return position, roll()
 
+# to check if any player won
+def did_win(position):
+    for i in position:
+        coin_home = 0
+        for j in position[i][1:]:  #to remove the first element which is None
+        # I do not need to check for individual colors as I will call this function
+        # after every move so that once 4 coins of any player is in home, the game ends.
+            if i == 'red' and j == PATH[58]:
+                coin_home +=1
+            elif i == 'yellow' and j == PATH[70]:
+                coin_home += 1
+            elif i == 'green' and j == PATH[76]:
+                coin_home += 1
+            elif i== 'blue' and j == PATH[64]:
+                coin_home += 1
+        if coin_home == 4:
+            tkMessageBox.showinfo("Result","Player " + i +" won.")
+            return i
+    return -1
+
+def message_to_screen(color,msg = 'PLAYER',where_text = (100,22)):
+    textSurface = medfont.render(msg, True, color)
+    textRect = textSurface.get_rect()
+    textRect.center = where_text[0], where_text[1]
+    gameDisplay.blit(textSurface, textRect)
+
+def playercontrol(player):
+    if player == 'red':
+        message_to_screen(color = GREEN)
+        return 'green'
+    elif player == 'green':
+        message_to_screen(color = YELLOW)
+        return 'yellow'
+    elif player == 'blue':
+        message_to_screen(color = RED )
+        return 'red'
+    elif player == 'yellow':
+        message_to_screen(color = BLUE)
+        return 'blue'
 def gameloop():
     gameOver = False
     gameExit = False
     while not gameExit:
         #if gameOver == True: ##########come back later - replay options
             #pass
-
+        for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    gameOver = gameExit = True
         coin_position = game_initialize()
+        player = 'red'
+        message_to_screen(color = RED )
+        move = roll()
         while not gameOver:
             gameDisplay.blit(image,(0,45))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     gameOver = gameExit = True
                 if event.type == pygame.MOUSEBUTTONUP:
-                    #print pygame.mouse.get_pos()
-                    coin_selected = detect_coin(pygame.mouse.get_pos(),coin_position)
-                    if coin_selected:
-                        move = roll()
-                        #print move,coin_selected,coin_position
-                        coin_move(coin_position,coin_selected,move)
+                        #print 'position',pygame.mouse.get_pos()
+
+                        coin_selected = detect_coin(pygame.mouse.get_pos(),coin_position)
+                        if coin_selected and coin_selected[0][0] == player:
+                            #print move,coin_selected,coin_position
+                            player_change = True
+                            coin_position, move = coin_move(coin_position,coin_selected,move)
+                            if did_win(coin_position) != -1:
+                                gameOver = True
+                        else:
+                            player_change = False
+                        if player_change:
+                            player = playercontrol(player)
+
             drawcoins(coin_position)
             pygame.display.update()
             clock.tick(FPS)
@@ -187,4 +264,4 @@ exit()
 
 ################################ CITATIONS ############################################################
 
-# Main Menu Image = <https://www.codester.com/static/uploads/items/3366/icon.png>
+

@@ -144,9 +144,24 @@ def detect_square_number(PATH,coin):
         if PATH[i] == coin:
             return i
     return False
+
+def is_valid_move(color,start,destination,position,PATH):
+    for i in range(start+1,destination):
+        for j in position:
+            for k in position[j][1:]:
+                if k == PATH[i]:
+                    return False
+    return True
+def capture:(color,destination,position PATH):
+    for j in position:
+        for k in position[j][1:]:
+            if k == PATH[destination]:
+                    return False
+
 def coin_move(position,coin_selected,move):
         color = coin_selected[0][0]
         coin_number = coin_selected[0][1]
+        move_made = True
         did_coin_start = detect_square_number(PATH,position[color][coin_number])
         if not did_coin_start:
             if move == 6:
@@ -162,24 +177,37 @@ def coin_move(position,coin_selected,move):
             #if isvalid(did_coin_start,color,move):
             if color == 'blue' and 8<=did_coin_start<=13 and did_coin_start + move >13:
                 change = move - (13 - did_coin_start)
-                position['blue'][coin_number] = PATH[58+change]
+                if is_valid_move(color,did_coin_start,13,position,PATH):
+                    position['blue'][coin_number] = PATH[58+change]
+                else: move_made = True
             elif color == 'green' and 34<=did_coin_start<=39 and did_coin_start + move >39:
-                change = move - (39 - did_coin_start)
-                position['blue'][coin_number] = PATH[70 +change]
+                if is_valid_move(color,did_coin_start,39,position,PATH):
+                    change = move - (39 - did_coin_start)
+                else: move_made = False
+                position['green'][coin_number] = PATH[70 +change]
             elif color == 'yellow' and 21<=did_coin_start<=26 and did_coin_start + move >26:
                 change = move - (26 - did_coin_start)
-                position['blue'][coin_number] = PATH[64+change]
+                if is_valid_move(color,did_coin_start,26,position,PATH):
+                    position['blue'][coin_number] = PATH[64+change]
+                else: move_made = False
             elif color == 'red' and did_coin_start>52 and did_coin_start + move > 58:
-                pass
+                move_made = False
             elif color == 'green' and did_coin_start>=71 and did_coin_start + move > 76:
-                pass
+                move_made = False
             elif color == 'blue' and did_coin_start>=59 and did_coin_start + move > 64:
-                pass
+                move_made = False
             elif color == 'yellow' and did_coin_start>=65 and did_coin_start + move > 76:
-                pass
-            else: position[color][coin_number] = PATH[did_coin_start + move]
+                move_made = False
+            elif color in ['green','blue','yellow'] and did_coin_start + move>52:
+                position[color][coin_number] = PATH[did_coin_start+move-52]
+            else:
+                destination = (did_coin_start + move)
+                if is_valid_move(color,did_coin_start,destination,position,PATH):
+                    position[color][coin_number] = PATH[did_coin_start + move]
+                else: move_made = False
         print color,coin_number,move
-        return position, roll()
+        if move_made: return position, roll(),move_made
+        else: return position, move ,move_made
 
 # to check if any player won
 def did_win(position):
@@ -245,9 +273,12 @@ def gameloop():
                         if coin_selected and coin_selected[0][0] == player:
                             #print move,coin_selected,coin_position
                             player_change = True
-                            coin_position, move = coin_move(coin_position,coin_selected,move)
+                            coin_position, move, move_made = coin_move(coin_position,coin_selected,move)
                             if did_win(coin_position) != -1:
                                 gameOver = True
+                            player_change = move_made
+                            if move == 6:
+                                player_change = False
                         else:
                             player_change = False
                         if player_change:

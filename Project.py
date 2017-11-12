@@ -197,7 +197,7 @@ def coin_move(position,coin_selected,move):
                 move_made = False
             elif color == 'yellow' and did_coin_start>=65 and did_coin_start + move > 76:
                 move_made = False
-            elif color in ['green','blue','yellow'] and did_coin_start + move>52:
+            elif color in ['green','blue','yellow'] and 58>=did_coin_start + move>52:
                 position[color][coin_number] = PATH[did_coin_start+move-52]
             else:
                 destination = (did_coin_start + move)

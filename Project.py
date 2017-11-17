@@ -13,7 +13,7 @@ import pygame
 pygame.init()
 import time
 import random
-import tkMessageBox
+import chalk_path
 #######################################################################################################
 
 ############################## CONSTANTS ##############################################################
@@ -40,57 +40,30 @@ BLUE_ROAD = [59,60,61,62,63,64]
 YELLOW_ROAD = [65,66,67,68,69,70]
 GREEN_ROAD = [71,72,73,74,75,76]
 IS_COIN_PRESENT = [False] * 53 # to chack if any coin is present at a square
-################## CHALKING OUT THE PATH ################
-PATH = [(),(4,331)]
-for i in range(2,7):  #upto square 6
-    PATH.append((PATH[i-1][0] + SQUARE_SIZE,PATH[i-1][1]))
-PATH.append((PATH[6][0] + SQUARE_SIZE,PATH[6][1] - SQUARE_SIZE))
-for i in range(8,13):  #upto square 12
-    PATH.append((PATH[i-1][0],PATH[i-1][1] - SQUARE_SIZE))
-PATH.append((PATH[12][0] + SQUARE_SIZE,PATH[12][1]))
-PATH.append((PATH[13][0] + SQUARE_SIZE,PATH[13][1]))
-for i in range(15,20): #upto square 19
-    PATH.append((PATH[i-1][0],PATH[i-1][1] + SQUARE_SIZE))
-PATH.append((PATH[19][0] + SQUARE_SIZE,PATH[19][1] + SQUARE_SIZE))
-for i in range(21,26): #upto square 25
-    PATH.append((PATH[i-1][0] + SQUARE_SIZE,PATH[i-1][1]))
-PATH.append((PATH[25][0],PATH[25][1] + SQUARE_SIZE))
-PATH.append((PATH[26][0],PATH[26][1] + SQUARE_SIZE))
-for i in range(28,33): #upto square 32
-    PATH.append((PATH[i-1][0] - SQUARE_SIZE,PATH[i-1][1]))
-PATH.append((PATH[32][0] - SQUARE_SIZE,PATH[32][1] + SQUARE_SIZE))
-for i in range(34,39): #upto square 38
-    PATH.append((PATH[i-1][0],PATH[i-1][1] + SQUARE_SIZE))
-PATH.append((PATH[38][0] - SQUARE_SIZE,PATH[38][1]))
-PATH.append((PATH[39][0] - SQUARE_SIZE,PATH[39][1]))
-for i in range(41,46): #upto square 45
-    PATH.append((PATH[i-1][0],PATH[i-1][1] - SQUARE_SIZE))
-PATH.append((PATH[45][0] - SQUARE_SIZE,PATH[45][1] - SQUARE_SIZE))
-for i in range(47,52): #upto square 51
-    PATH.append((PATH[i-1][0] - SQUARE_SIZE,PATH[i-1][1]))
-PATH.append((PATH[51][0],PATH[51][1] - SQUARE_SIZE))
-# Now the home run path
-for i in range(53,59): #red
-    PATH.append((PATH[i-1][0] + SQUARE_SIZE,PATH[i-1][1]))
-PATH.append((PATH[13][0],PATH[13][1] + SQUARE_SIZE))
-for i in range(60,65): #blue
-    PATH.append((PATH[i-1][0],PATH[i-1][1] + SQUARE_SIZE))
-PATH.append((PATH[26][0] - SQUARE_SIZE,PATH[26][1]))
-for i in range(66,71): #yellow
-    PATH.append((PATH[i-1][0] - SQUARE_SIZE,PATH[i-1][1]))
-PATH.append((PATH[39][0],PATH[39][1] - SQUARE_SIZE))
-for i in range(72,77): #green
-    PATH.append((PATH[i-1][0],PATH[i-1][1] - SQUARE_SIZE))
+spritesheet = [] # to store the images of dice
+for i in range(1,7):
+    spritesheet.append(pygame.image.load('dice (' + str(i)+').png'))
+print 'done loading'
 #######################################################################################################
 def roll():  #rolling the dice
     dice = random.choice([1,2,3,4,5,6])
+    i = 0
+    while i <12:
+        pygame.draw.rect(gameDisplay,BLACK,(500,0,DISPLAY_WIDTH-500,50))
+        gameDisplay.blit(spritesheet[i%6],(500,0))
+        message_to_screen(color = WHITE, msg = str(i), where_text = (DISPLAY_WIDTH-100,22) )
+        i += 1
+        clock.tick(2*FPS)
+        pygame.display.update()
     pygame.draw.rect(gameDisplay,BLACK,(500,0,DISPLAY_WIDTH-500,50))
+    gameDisplay.blit(spritesheet[dice-1],(500,0))
     message_to_screen(color = WHITE, msg = str(dice), where_text = (DISPLAY_WIDTH-100,22) )
     return dice
 
 # this brings back the coins back to the original position
 # this function also empties the path
 def game_initialize():
+    PATH = chalk_path.PATH(SQUARE_SIZE)
     IS_COIN_PRESENT = [False] * 53 # to check if any coin is present at a square
     position = {'red':[None],'blue':[None],'yellow':[None],'green':[None]}
     #RED COINS
@@ -105,9 +78,9 @@ def game_initialize():
     #GREEN COINS
     for i in [(PATH[4][0],PATH[43][1]),(PATH[4][0],PATH[41][1]),(PATH[3][0],PATH[42][1]),(PATH[5][0],PATH[42][1])]:
         position['green'].append(i)
-    return position
+    return (PATH,position)
 
-def drawcoins(position): #to draw coints on the board
+def drawcoins(position,PATH): #to draw coints on the board
     for i in position:
         if i == 'red':
             color = RED
@@ -157,7 +130,7 @@ def is_valid_move(color,start,destination,position,PATH):
         for k in position[j][1:]:
             pass'''
 
-def coin_move(position,coin_selected,move):
+def coin_move(position,coin_selected,move,PATH):
         color = coin_selected[0][0]
         coin_number = coin_selected[0][1]
         move_made = True
@@ -187,7 +160,7 @@ def coin_move(position,coin_selected,move):
             elif color == 'yellow' and 21<=did_coin_start<=26 and did_coin_start + move >26:
                 change = move - (26 - did_coin_start)
                 if is_valid_move(color,did_coin_start,26,position,PATH):
-                    position['blue'][coin_number] = PATH[64+change]
+                    position['yellow'][coin_number] = PATH[64+change]
                 else: move_made = False
             elif color == 'red' and did_coin_start>52 and did_coin_start + move > 58:
                 move_made = False
@@ -209,7 +182,7 @@ def coin_move(position,coin_selected,move):
         else: return position, move ,move_made
 
 # to check if any player won
-def did_win(position):
+def did_win(gameDisplay,position,PATH):
     for i in position:
         coin_home = 0
         for j in position[i][1:]:  #to remove the first element which is None
@@ -224,7 +197,8 @@ def did_win(position):
             elif i== 'blue' and j == PATH[64]:
                 coin_home += 1
         if coin_home == 4:
-            tkMessageBox.showinfo("Result","Player " + i +" won.")
+            gameDisplay.fill(BLACK)
+            message_to_screen(color = WHITE, msg = "Player " + i + " won.",where_text = (0,0))
             return i
     return -1
 
@@ -256,7 +230,7 @@ def gameloop():
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     gameOver = gameExit = True
-        coin_position = game_initialize()
+        PATH, coin_position = game_initialize()
         player = 'red'
         message_to_screen(color = RED )
         move = roll()
@@ -265,26 +239,26 @@ def gameloop():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     gameOver = gameExit = True
-                if event.type == pygame.MOUSEBUTTONUP:
-                        #print 'position',pygame.mouse.get_pos()
-
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                    player = playercontrol(player)
+                    move = roll()
+                elif event.type == pygame.MOUSEBUTTONUP:
                         coin_selected = detect_coin(pygame.mouse.get_pos(),coin_position)
                         if coin_selected and coin_selected[0][0] == player:
                             #print move,coin_selected,coin_position
                             player_change = True
                             prev_move = move
-                            coin_position, move, move_made = coin_move(coin_position,coin_selected,move)
-                            if did_win(coin_position) != -1:
+                            coin_position, move, move_made = coin_move(coin_position,coin_selected,move,PATH)
+                            if did_win(gameDisplay,coin_position,PATH) != -1:
                                 gameOver = True
                             if prev_move == 6:  player_change = False
                             else: player_change = move_made
-
                         else:
                             player_change = False
                         if player_change:
                             player = playercontrol(player)
 
-            drawcoins(coin_position)
+            drawcoins(coin_position,PATH)
             pygame.display.update()
             clock.tick(FPS)
 

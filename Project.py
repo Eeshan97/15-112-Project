@@ -45,13 +45,14 @@ for i in range(1,7):
     spritesheet.append(pygame.image.load('dice (' + str(i)+').png'))
 print 'done loading'
 #######################################################################################################
-def roll():  #rolling the dice
-    dice = random.choice([1,2,3,4,5,6])
-    i = 0
+def roll(i=0):  #rolling the dice
+    options = [1,2,3,4,5,6]
+    dice = random.choice(options)
     while i <12:
-        pygame.draw.rect(gameDisplay,BLACK,(500,0,DISPLAY_WIDTH-500,50))
-        gameDisplay.blit(spritesheet[i%6],(500,0))
-        message_to_screen(color = WHITE, msg = str(i), where_text = (DISPLAY_WIDTH-100,22) )
+        pygame.draw.rect(gameDisplay,BLACK,(300,0,DISPLAY_WIDTH-300,50))
+        temp = random.choice(options)
+        gameDisplay.blit(spritesheet[temp-1],(300 + (i%6)*45,0))
+        message_to_screen(color = WHITE, msg = str(temp), where_text = (DISPLAY_WIDTH-100,22) )
         i += 1
         clock.tick(2*FPS)
         pygame.display.update()
@@ -233,7 +234,7 @@ def gameloop():
         PATH, coin_position = game_initialize()
         player = 'red'
         message_to_screen(color = RED )
-        move = roll()
+        move = roll(12)
         while not gameOver:
             gameDisplay.blit(image,(0,45))
             for event in pygame.event.get():

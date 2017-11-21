@@ -222,7 +222,7 @@ def coin_move(position,coin_selected,move,PATH):
                 move = did_coin_start+move-52
                 if is_valid_move(color,did_coin_start,53,position,PATH):
                     if is_valid_move(color,1,move,position,PATH):
-                        position = capture(color,1,destination,position,PATH)
+                        position = capture(color,1,move,position,PATH)
                         if temp == position:
                          position[color][coin_number] = PATH[did_coin_start + move]
                     else: move_made = False

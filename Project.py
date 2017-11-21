@@ -56,7 +56,7 @@ def roll(i=0):  #rolling the dice
         gameDisplay.blit(spritesheet[temp-1],(300 + (i%6)*45,0))
         message_to_screen(color = WHITE, msg = str(temp), where_text = (DISPLAY_WIDTH-100,22) )
         i += 1
-        clock.tick(2*FPS)
+        clock.tick(4*FPS)
         pygame.display.update()
     pygame.draw.rect(gameDisplay,BLACK,(500,0,DISPLAY_WIDTH-500,50))
     gameDisplay.blit(spritesheet[dice-1],(500,0))
@@ -137,6 +137,7 @@ def is_valid_move(color,start,destination,position,PATH):
     return True
 def capture(color,start,destination,position,PATH):
     for k in position[color][1:]:
+        print k,PATH[destination]
         if k == PATH[destination]:
             return position
     coin_captured = None
@@ -148,13 +149,13 @@ def capture(color,start,destination,position,PATH):
                 if k==PATH[destination]:
                     coin_captured = (j,counter)
     if coin_captured:
-        if color == 'red':
+        if coin_captured[0] == 'red':
             home = RED_HOME
-        elif color == 'yellow':
+        elif coin_captured[0] == 'yellow':
             home = YELLOW_HOME
-        elif color == "green":
+        elif coin_captured[0] == "green":
             home = GREEN_HOME
-        elif color == "blue":
+        elif coin_captured[0] == "blue":
             home = BLUE_HOME
         for i in home:
             isEmpty = True
@@ -217,12 +218,21 @@ def coin_move(position,coin_selected,move,PATH):
             elif color == 'yellow' and did_coin_start>=65 and did_coin_start + move > 76:
                 move_made = False
             elif color in ['green','blue','yellow'] and 58>=did_coin_start + move>52:
-                position[color][coin_number] = PATH[did_coin_start+move-52]
+                temp = position
+                move = did_coin_start+move-52
+                if is_valid_move(color,did_coin_start,53,position,PATH):
+                    if is_valid_move(color,1,move,position,PATH):
+                        position = capture(color,1,destination,position,PATH)
+                        if temp == position:
+                         position[color][coin_number] = PATH[did_coin_start + move]
+                    else: move_made = False
             else:
                 destination = (did_coin_start + move)
+                temp = position
                 if is_valid_move(color,did_coin_start,destination,position,PATH):
                     position = capture(color,did_coin_start,destination,position,PATH)
-                    position[color][coin_number] = PATH[did_coin_start + move]
+                    if temp == position:
+                        position[color][coin_number] = PATH[did_coin_start + move]
                 else: move_made = False
         print color,coin_number,move
         if move_made: return position, roll(),move_made

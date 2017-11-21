@@ -34,12 +34,14 @@ pygame.display.set_icon(image)
 clock = pygame.time.Clock()
 FPS = 7
 medfont = pygame.font.SysFont("comicsansms",50)
+PATH = chalk_path.PATH(SQUARE_SIZE)
 SAFE_ZONE = [2,15,28,40]  # Pawns cannot be captured here
-RED_ROAD = [53,54,55,56,57,58]
-BLUE_ROAD = [59,60,61,62,63,64]
-YELLOW_ROAD = [65,66,67,68,69,70]
-GREEN_ROAD = [71,72,73,74,75,76]
-IS_COIN_PRESENT = [False] * 53 # to chack if any coin is present at a square
+RED_HOME = [(PATH[4][0],PATH[10][1]),(PATH[4][0],PATH[8][1]),(PATH[3][0],PATH[9][1]),(PATH[5][0],PATH[9][1])]
+BLUE_HOME = [(PATH[23][0],PATH[18][1]),(PATH[23][0],PATH[16][1]),(PATH[22][0],PATH[17][1]),(PATH[24][0],PATH[17][1])]
+YELLOW_HOME = [(PATH[23][0],PATH[35][1]),(PATH[23][0],PATH[37][1]),(PATH[22][0],PATH[36][1]),(PATH[24][0],PATH[36][1])]
+GREEN_HOME = [(PATH[4][0],PATH[43][1]),(PATH[4][0],PATH[41][1]),(PATH[3][0],PATH[42][1]),(PATH[5][0],PATH[42][1])]
+for i in range(1,len(PATH)):
+        PATH[i] = (PATH[i][0] + SQUARE_SIZE/2 , PATH[i][1] + SQUARE_SIZE/2)
 spritesheet = [] # to store the images of dice
 for i in range(1,7):
     spritesheet.append(pygame.image.load('dice (' + str(i)+').png'))
@@ -64,22 +66,29 @@ def roll(i=0):  #rolling the dice
 # this brings back the coins back to the original position
 # this function also empties the path
 def game_initialize():
-    PATH = chalk_path.PATH(SQUARE_SIZE)
-    IS_COIN_PRESENT = [False] * 53 # to check if any coin is present at a square
+    #intro(gameDisplay)
     position = {'red':[None],'blue':[None],'yellow':[None],'green':[None]}
-    #RED COINS
-    for i in [(PATH[4][0],PATH[10][1]),(PATH[4][0],PATH[8][1]),(PATH[3][0],PATH[9][1]),(PATH[5][0],PATH[9][1])]:
+      #RED COINS
+    for i in RED_HOME:
         position['red'].append(i)
     #BLUE COINS
-    for i in [(PATH[23][0],PATH[18][1]),(PATH[23][0],PATH[16][1]),(PATH[22][0],PATH[17][1]),(PATH[24][0],PATH[17][1])]:
+    for i in BLUE_HOME:
         position['blue'].append(i)
     #YELLOW COINS
-    for i in [(PATH[23][0],PATH[35][1]),(PATH[23][0],PATH[37][1]),(PATH[22][0],PATH[36][1]),(PATH[24][0],PATH[36][1])]:
+    for i in YELLOW_HOME:
         position['yellow'].append(i)
     #GREEN COINS
-    for i in [(PATH[4][0],PATH[43][1]),(PATH[4][0],PATH[41][1]),(PATH[3][0],PATH[42][1]),(PATH[5][0],PATH[42][1])]:
+    for i in GREEN_HOME:
         position['green'].append(i)
     return (PATH,position)
+
+def intro(gameDisplay):
+    intro_end = False
+    rulefile = open("Rules.txt")
+    rules = rulefile.readline()
+    while not intro_end and rules:
+        gameDisplay.fill(WHITE)
+
 
 def drawcoins(position,PATH): #to draw coints on the board
     for i in position:
@@ -126,10 +135,46 @@ def is_valid_move(color,start,destination,position,PATH):
                 if k == PATH[i]:
                     return False
     return True
-'''def capture(color,destination,position PATH):
+def capture(color,start,destination,position,PATH):
+    for k in position[color][1:]:
+        if k == PATH[destination]:
+            return position
+    coin_captured = None
     for j in position:
-        for k in position[j][1:]:
-            pass'''
+        if j!=color:
+            counter = 0
+            for k in position[j][1:]:
+                counter += 1
+                if k==PATH[destination]:
+                    coin_captured = (j,counter)
+    if coin_captured:
+        if color == 'red':
+            home = RED_HOME
+        elif color == 'yellow':
+            home = YELLOW_HOME
+        elif color == "green":
+            home = GREEN_HOME
+        elif color == "blue":
+            home = BLUE_HOME
+        for i in home:
+            isEmpty = True
+            for j in position[coin_captured[0]]:
+                if i==j:
+                    isEmpty = False
+            if isEmpty:
+                position[coin_captured[0]][coin_captured[1]] = i
+                return position
+    return position
+
+def is_coin_present(position,color,destination,coin_number):
+        for j in position:
+            is_present = False
+            for k in position[j][1:]:
+                if k == PATH[destination]:
+                    is_present = True
+            if is_present :return (position,False)
+        position[color][coin_number] = PATH[destination]
+        return (position,True)
 
 def coin_move(position,coin_selected,move,PATH):
         color = coin_selected[0][0]
@@ -139,13 +184,13 @@ def coin_move(position,coin_selected,move,PATH):
         if not did_coin_start:
             if move == 6:
                 if color == 'red':
-                  position[color][coin_number] = PATH[2]
+                  position, move_made = is_coin_present(position,color,2,coin_number)
                 elif color == 'blue':
-                   position[color][coin_number] = PATH[15]
+                   position, move_made = is_coin_present(position,color,15,coin_number)
                 elif color == 'green':
-                    position[color][coin_number] = PATH[41]
+                    position, move_made = is_coin_present(position,color,41,coin_number)
                 else:
-                    position[color][coin_number] = PATH[28]
+                    position, move_made = is_coin_present(position,color,28,coin_number)
         else:
             #if isvalid(did_coin_start,color,move):
             if color == 'blue' and 8<=did_coin_start<=13 and did_coin_start + move >13:
@@ -176,6 +221,7 @@ def coin_move(position,coin_selected,move,PATH):
             else:
                 destination = (did_coin_start + move)
                 if is_valid_move(color,did_coin_start,destination,position,PATH):
+                    position = capture(color,did_coin_start,destination,position,PATH)
                     position[color][coin_number] = PATH[did_coin_start + move]
                 else: move_made = False
         print color,coin_number,move

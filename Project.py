@@ -340,7 +340,7 @@ def playercontrol(player):
     elif player == 'yellow':
         message_to_screen(color = BLUE)
         return 'blue'
-AI_list = ['blue','yellow','green','red']
+AI_list = ['blue','green']
 def gameloop():
     gameOver = False
     gameExit = False

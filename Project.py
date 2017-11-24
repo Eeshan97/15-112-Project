@@ -26,13 +26,14 @@ YELLOW = (255,255,0)
 WHITE = (255,255,255)
 BLACK = (0,0,0)
 SQUARE_SIZE = 705/15 #side of the image by number of boxes
-COIN_RADIUS = SQUARE_SIZE/4
+COIN_RADIUS = SQUARE_SIZE/3
 gameDisplay = pygame.display.set_mode((DISPLAY_WIDTH,DISPLAY_HEIGHT))
 pygame.display.set_caption('LUDO - Main Menu')
 image = pygame.image.load('ludo.jpg')
 pygame.display.set_icon(image)
 clock = pygame.time.Clock()
 FPS = 7
+no_of_six = 0
 medfont = pygame.font.SysFont("comicsansms",50)
 PATH = chalk_path.PATH(SQUARE_SIZE)
 SAFE_ZONE = [2,15,28,40]  # Pawns cannot be captured here
@@ -48,8 +49,14 @@ for i in range(1,7):
 print 'done loading'
 #######################################################################################################
 def roll(i=0):  #rolling the dice
-    options = [1,2,3,4,5,6]
+    global no_of_six
+    if no_of_six < 3:
+        options = [1,2,3,4,5,6]
+    else:
+        options = [1,2,3,4,5]
     dice = random.choice(options)
+    if dice==6:  no_of_six += 1
+    else: no_of_six = 0
     while i <12:
         pygame.draw.rect(gameDisplay,BLACK,(300,0,DISPLAY_WIDTH-300,50))
         temp = random.choice(options)
@@ -137,7 +144,6 @@ def is_valid_move(color,start,destination,position,PATH):
     return True
 def capture(color,start,destination,position,PATH):
     for k in position[color][1:]:
-        print k,PATH[destination]
         if k == PATH[destination]:
             return position
     coin_captured = None
@@ -173,11 +179,66 @@ def is_coin_present(position,color,destination,coin_number):
             for k in position[j][1:]:
                 if k == PATH[destination]:
                     is_present = True
-            if is_present :return (position,False)
+            if is_present :
+                print j,k,"present"
+                return (position,False)
         position[color][coin_number] = PATH[destination]
         return (position,True)
 
-def coin_move(position,coin_selected,move,PATH):
+def AI(color,position,PATH,move):
+    #this is a ruled based AI
+    print move
+    counter_coins_pocket = 0
+    which_coins = []
+    for i in range(1,5):
+        for j in [58,64,70,76]: #home pocket numbers
+            if position[color][i] == PATH[j]:
+                counter_coins_pocket += 1
+            elif i not in which_coins:
+                which_coins.append(i)
+    if counter_coins_pocket == 3:
+        return coin_move(position,[(color,which_coins[0])],move,PATH)
+    for i in which_coins:
+        temp_position = {}
+        for z in position:
+            temp_position[z] = position[z]
+        temp_position , move , move_made = coin_move(temp_position,[(color,i)],move,PATH,check_roll = False)
+        for j in temp_position:
+            if j!=color and temp_position[j]!=position[j]:
+                print 'capture'
+                return temp_position,roll(),move_made
+    if move == 6:
+        for coin_number in which_coins:
+            if color == 'red':
+                position, move_made = is_coin_present(position,color,2,coin_number)
+            elif color == 'blue':
+                 position, move_made = is_coin_present(position,color,15,coin_number)
+            elif color == 'green':
+                  position, move_made = is_coin_present(position,color,41,coin_number)
+            else:
+                position, move_made = is_coin_present(position,color,28,coin_number)
+            if move_made:
+                return position,roll(),move_made
+    move_made = False
+    no_of_trials = 0
+    for i in which_coins:
+        for j in [58,64,70,76]:
+            if position[color][i] == PATH[j-move]:
+                _ ,_ , move_made = coin_move(position,[(color,i)],move,PATH,check_roll = False)
+                if move_made:
+                    return position, roll(), move_made
+    while not move_made and no_of_trials <10:
+        temp_position = {}
+        for z in position:
+            temp_position[z] = position[z]
+        temp_position , _ , move_made = coin_move(temp_position,[(color,random.choice(which_coins))],move,PATH,check_roll = False)
+        no_of_trials += 1
+    if move_made:
+        return temp_position, roll(), move_made
+    return position,roll(),True
+
+
+def coin_move(position,coin_selected,move,PATH, check_roll = True):
         color = coin_selected[0][0]
         coin_number = coin_selected[0][1]
         move_made = True
@@ -218,14 +279,14 @@ def coin_move(position,coin_selected,move,PATH):
             elif color == 'yellow' and did_coin_start>=65 and did_coin_start + move > 76:
                 move_made = False
             elif color in ['green','blue','yellow'] and 58>=did_coin_start + move>52:
-                temp = position
+                #temp = position
                 move = did_coin_start+move-52
                 if is_valid_move(color,did_coin_start,53,position,PATH):
                     if is_valid_move(color,1,move,position,PATH):
                         position = capture(color,1,move,position,PATH)
-                        if temp == position:
-                         position[color][coin_number] = PATH[did_coin_start + move]
-                    else: move_made = False
+                        #if temp == position:
+                         #position[color][coin_number] = PATH[did_coin_start + move]
+                else: move_made = False
             else:
                 destination = (did_coin_start + move)
                 temp = position
@@ -234,8 +295,9 @@ def coin_move(position,coin_selected,move,PATH):
                     if temp == position:
                         position[color][coin_number] = PATH[did_coin_start + move]
                 else: move_made = False
-        print color,coin_number,move
-        if move_made: return position, roll(),move_made
+        if move_made and check_roll:
+            print color,coin_number,move
+            return position, roll(),move_made
         else: return position, move ,move_made
 
 # to check if any player won
@@ -255,7 +317,7 @@ def did_win(gameDisplay,position,PATH):
                 coin_home += 1
         if coin_home == 4:
             gameDisplay.fill(BLACK)
-            message_to_screen(color = WHITE, msg = "Player " + i + " won.",where_text = (0,0))
+            message_to_screen(color = WHITE, msg = "Player " + i + " won.",where_text = (350,350))
             return i
     return -1
 
@@ -278,6 +340,7 @@ def playercontrol(player):
     elif player == 'yellow':
         message_to_screen(color = BLUE)
         return 'blue'
+AI_list = ['blue','yellow','green','red']
 def gameloop():
     gameOver = False
     gameExit = False
@@ -299,13 +362,19 @@ def gameloop():
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     player = playercontrol(player)
                     move = roll()
-                elif event.type == pygame.MOUSEBUTTONUP:
-                        coin_selected = detect_coin(pygame.mouse.get_pos(),coin_position)
+                elif event.type == pygame.MOUSEBUTTONUP or player in AI_list:
+                        is_AI_playing = player in AI_list
+                        if not is_AI_playing:
+                            coin_selected = detect_coin(pygame.mouse.get_pos(),coin_position)
+                        else:
+                            coin_selected = [[player]]
                         if coin_selected and coin_selected[0][0] == player:
-                            #print move,coin_selected,coin_position
                             player_change = True
                             prev_move = move
-                            coin_position, move, move_made = coin_move(coin_position,coin_selected,move,PATH)
+                            if not is_AI_playing:
+                               coin_position, move, move_made = coin_move(coin_position,coin_selected,move,PATH)
+                            else:
+                                coin_position, move, move_made = AI(player,coin_position,PATH,move)
                             if did_win(gameDisplay,coin_position,PATH) != -1:
                                 gameOver = True
                             if prev_move == 6:  player_change = False
@@ -315,7 +384,7 @@ def gameloop():
                         if player_change:
                             player = playercontrol(player)
 
-            drawcoins(coin_position,PATH)
+            if not gameOver: drawcoins(coin_position,PATH)
             pygame.display.update()
             clock.tick(FPS)
 

@@ -7,7 +7,7 @@ executables = [
         cx_Freeze.Executable("Project.py")
 ]
 cx_Freeze.setup(
-        name = "Slither",
+        name = "Ludo",
         options = {"build_exe": {"packages":["pygame","time","random"],"include_files":["ludo.jpg"] + spritesheet}},
         description = "Ludo Game Install",
         executables = executables)

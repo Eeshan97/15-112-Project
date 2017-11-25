@@ -103,7 +103,8 @@ def game_initialize(gameDisplay):
 def intro(gameDisplay):
     intro_end = False
     AI_list = []
-    temp = []
+    #temp = []
+    temp = ['yellow']
     #Basic instructions to be displayed to the sceen
     while not intro_end:
         gameDisplay.fill(BLACK)
@@ -400,7 +401,10 @@ def did_win(gameDisplay,position,PATH):
         if coin_home == 4:
             gameDisplay.fill(BLACK)
             message_to_screen(color = WHITE, msg = "Player " + i + " won.",where_text = (350,350))
-            time.sleep(10)
+            message_to_screen(color = WHITE, msg = "Wait for 30 seconds to restart.",where_text = (350,450),small = True)
+            print "Hurray"
+            pygame.display.update()
+            time.sleep(30)
             return i
     return -1
 

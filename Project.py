@@ -103,8 +103,8 @@ def game_initialize(gameDisplay):
 def intro(gameDisplay):
     intro_end = False
     AI_list = []
-    #temp = []
-    temp = ['yellow']
+    temp = []
+    #temp = ['yellow']
     #Basic instructions to be displayed to the sceen
     while not intro_end:
         gameDisplay.fill(BLACK)
@@ -116,7 +116,7 @@ def intro(gameDisplay):
         if 'red' not in temp: message_to_screen(RED,msg = "Press R to play as Red",where_text = (350,300))
         if "blue" not in temp : message_to_screen(BLUE,msg = "Press B to play as Blue",where_text = (350,400))
         if "green" not in temp : message_to_screen(GREEN,msg = "Press G to play as Green",where_text = (350,500))
-        if "yellow" not in temp : message_to_screen(YELLOW,msg = "Yellow is a player.",where_text = (350,600))
+        message_to_screen(YELLOW,msg = "Yellow is a player.",where_text = (350,600))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  #Quit option
                 pygame.quit()
@@ -129,8 +129,6 @@ def intro(gameDisplay):
                     temp.append('red')
                 if event.key == pygame.K_g and 'green' not in temp:
                     temp.append('green')
-                if event.key == pygame.K_y and 'yellow' not in temp:
-                    temp.append('yellow')
                 if event.key == pygame.K_b and 'blue' not in temp:
                     temp.append('blue')
                 if event.key == pygame.K_i:
@@ -401,10 +399,11 @@ def did_win(gameDisplay,position,PATH):
         if coin_home == 4:
             gameDisplay.fill(BLACK)
             message_to_screen(color = WHITE, msg = "Player " + i + " won.",where_text = (350,350))
-            message_to_screen(color = WHITE, msg = "Wait for 30 seconds to restart.",where_text = (350,450),small = True)
+            message_to_screen(color = WHITE, msg = "Wait for 10 seconds to restart.",where_text = (350,450),small = True)
+            message_to_screen(color = RED, msg = "Please do NOT press exit buttor.",where_text = (350,550),small = True)
             print "Hurray"
             pygame.display.update()
-            time.sleep(30)
+            time.sleep(10)
             return i
     return -1
 

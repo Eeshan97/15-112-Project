@@ -8,6 +8,6 @@ executables = [
 ]
 cx_Freeze.setup(
         name = "Ludo",
-        options = {"build_exe": {"packages":["pygame","time","random"],"include_files":["ludo.jpg"] + spritesheet}},
+        options = {"build_exe": {"packages":["pygame","time","random"],"include_files":["ludo.jpg"] + spritesheet + ["rules.txt"]}},
         description = "Ludo Game Install",
         executables = executables)

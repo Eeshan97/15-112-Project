@@ -36,6 +36,7 @@ pygame.display.set_icon(image)
 clock = pygame.time.Clock()
 FPS = 7
 no_of_six = 0
+no_of_tries = 0
 medfont = pygame.font.SysFont("comicsansms",50)
 smallfont = pygame.font.SysFont("comicsansms", 40)
 PATH = chalk_path.PATH(SQUARE_SIZE)
@@ -98,16 +99,18 @@ def intro(gameDisplay):
     intro_end = False
     AI_list = []
     temp = []
+
+    gameDisplay.fill(BLACK)
+    message_to_screen(WHITE,msg = "Press P to play.",where_text = (350,100))
+    message_to_screen(WHITE,msg = "You can choose multiple players.",where_text = (350,270),small = True)
+    message_to_screen(WHITE,msg = "Just press multiple keys.",where_text = (350,340),small = True)
+    message_to_screen(WHITE,msg = "Press I for instructions.",where_text = (350,200))
+    message_to_screen(RED,msg = "Press R to play as Red",where_text = (350,700))
+    message_to_screen(BLUE,msg = "Press B to play as Blue",where_text = (350,400))
+    message_to_screen(GREEN,msg = "Press G to play as Green",where_text = (350,500))
+    message_to_screen(YELLOW,msg = "Press Y to play as Yellow",where_text = (350,600))
+    pygame.display.update()
     while not intro_end:
-        gameDisplay.fill(BLACK)
-        message_to_screen(WHITE,msg = "Press P to play.",where_text = (350,100))
-        message_to_screen(WHITE,msg = "You can choose multiple players.",where_text = (350,270),small = True)
-        message_to_screen(WHITE,msg = "Just press multiple keys.",where_text = (350,340),small = True)
-        message_to_screen(WHITE,msg = "Press I for instructions.",where_text = (350,200))
-        message_to_screen(RED,msg = "Press R to play as Red",where_text = (350,700))
-        message_to_screen(BLUE,msg = "Press B to play as Blue",where_text = (350,400))
-        message_to_screen(GREEN,msg = "Press G to play as Green",where_text = (350,500))
-        message_to_screen(YELLOW,msg = "Press Y to play as Yellow",where_text = (350,600))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -125,7 +128,6 @@ def intro(gameDisplay):
                     temp.append('blue')
                 if event.key == pygame.K_i:
                     os.system("Notepad.exe rules.txt")
-        pygame.display.update()
         clock.tick(FPS)
     for i in ['blue','green','red','yellow']:
         if i not in temp:
@@ -206,7 +208,6 @@ def capture(color,start,destination,position,PATH):
                     isEmpty = False
             if isEmpty:
                 position[coin_captured[0]][coin_captured[1]] = i
-                return position
     return position
 
 def is_coin_present(position,color,destination,coin_number):
@@ -331,13 +332,15 @@ def coin_move(position,coin_selected,move,PATH, check_roll = True):
                 move = did_coin_start+move-52
                 if is_valid_move(color,did_coin_start,53,position,PATH):
                     if is_valid_move(color,1,move,position,PATH):
+                        print "True"
                         position = capture(color,1,move,position,PATH)
+                        position[color][coin_number] = PATH[move]
                         #if temp == position:
                          #position[color][coin_number] = PATH[did_coin_start + move]
                 else: move_made = False
             else:
                 destination = (did_coin_start + move)
-                temp = position
+                temp = copy.copy(position)
                 if is_valid_move(color,did_coin_start,destination,position,PATH):
                     position = capture(color,did_coin_start,destination,position,PATH)
                     if temp == position:
@@ -393,6 +396,7 @@ def playercontrol(player):
 def gameloop():
     gameOver = False
     gameExit = False
+    global no_of_tries
     while not gameExit:
         #if gameOver == True: ##########come back later - replay options
             #pass
@@ -430,8 +434,11 @@ def gameloop():
                             else: player_change = move_made
                         else:
                             player_change = False
-                        if player_change:
+                        if player_change or no_of_tries > 4:
                             player = playercontrol(player)
+                            move = roll()
+                            no_of_tries = 0
+                        else : no_of_tries += 1
 
             if not gameOver: drawcoins(coin_position,PATH)
             pygame.display.update()

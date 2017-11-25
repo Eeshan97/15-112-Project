@@ -14,6 +14,8 @@ pygame.init()
 import time
 import random
 import chalk_path
+import os
+import copy
 #######################################################################################################
 
 ############################## CONSTANTS ##############################################################
@@ -35,6 +37,7 @@ clock = pygame.time.Clock()
 FPS = 7
 no_of_six = 0
 medfont = pygame.font.SysFont("comicsansms",50)
+smallfont = pygame.font.SysFont("comicsansms", 40)
 PATH = chalk_path.PATH(SQUARE_SIZE)
 SAFE_ZONE = [2,15,28,40]  # Pawns cannot be captured here
 RED_HOME = [(PATH[4][0],PATH[10][1]),(PATH[4][0],PATH[8][1]),(PATH[3][0],PATH[9][1]),(PATH[5][0],PATH[9][1])]
@@ -72,7 +75,7 @@ def roll(i=0):  #rolling the dice
 
 # this brings back the coins back to the original position
 # this function also empties the path
-def game_initialize():
+def game_initialize(gameDisplay):
     #intro(gameDisplay)
     position = {'red':[None],'blue':[None],'yellow':[None],'green':[None]}
       #RED COINS
@@ -87,14 +90,47 @@ def game_initialize():
     #GREEN COINS
     for i in GREEN_HOME:
         position['green'].append(i)
-    return (PATH,position)
+    AI_list = intro(gameDisplay)
+    gameDisplay.fill(BLACK)
+    return (PATH,position,AI_list)
 
 def intro(gameDisplay):
     intro_end = False
-    rulefile = open("Rules.txt")
-    rules = rulefile.readline()
-    while not intro_end and rules:
-        gameDisplay.fill(WHITE)
+    AI_list = []
+    temp = []
+    while not intro_end:
+        gameDisplay.fill(BLACK)
+        message_to_screen(WHITE,msg = "Press P to play.",where_text = (350,100))
+        message_to_screen(WHITE,msg = "You can choose multiple players.",where_text = (350,270),small = True)
+        message_to_screen(WHITE,msg = "Just press multiple keys.",where_text = (350,340),small = True)
+        message_to_screen(WHITE,msg = "Press I for instructions.",where_text = (350,200))
+        message_to_screen(RED,msg = "Press R to play as Red",where_text = (350,700))
+        message_to_screen(BLUE,msg = "Press B to play as Blue",where_text = (350,400))
+        message_to_screen(GREEN,msg = "Press G to play as Green",where_text = (350,500))
+        message_to_screen(YELLOW,msg = "Press Y to play as Yellow",where_text = (350,600))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    intro_end = True
+                if event.key == pygame.K_r and 'red' not in temp:
+                    temp.append('red')
+                if event.key == pygame.K_g and 'green' not in temp:
+                    temp.append('green')
+                if event.key == pygame.K_y and 'yellow' not in temp:
+                    temp.append('yellow')
+                if event.key == pygame.K_b and 'blue' not in temp:
+                    temp.append('blue')
+                if event.key == pygame.K_i:
+                    os.system("Notepad.exe rules.txt")
+        pygame.display.update()
+        clock.tick(FPS)
+    for i in ['blue','green','red','yellow']:
+        if i not in temp:
+            AI_list.append(i)
+    return AI_list
 
 
 def drawcoins(position,PATH): #to draw coints on the board
@@ -180,14 +216,13 @@ def is_coin_present(position,color,destination,coin_number):
                 if k == PATH[destination]:
                     is_present = True
             if is_present :
-                print j,k,"present"
                 return (position,False)
         position[color][coin_number] = PATH[destination]
         return (position,True)
 
 def AI(color,position,PATH,move):
     #this is a ruled based AI
-    print move
+    print color,move
     counter_coins_pocket = 0
     which_coins = []
     for i in range(1,5):
@@ -198,43 +233,56 @@ def AI(color,position,PATH,move):
                 which_coins.append(i)
     if counter_coins_pocket == 3:
         return coin_move(position,[(color,which_coins[0])],move,PATH)
+    temp = position.copy()
     for i in which_coins:
-        temp_position = {}
-        for z in position:
-            temp_position[z] = position[z]
-        temp_position , move , move_made = coin_move(temp_position,[(color,i)],move,PATH,check_roll = False)
-        for j in temp_position:
-            if j!=color and temp_position[j]!=position[j]:
-                print 'capture'
-                return temp_position,roll(),move_made
+        if position[color][i] in PATH:
+            temp_position = copy.copy(position)
+            temp_position , move , move_made = coin_move(temp_position,[(color,i)],move,PATH,check_roll = False)
+            for j in temp_position:
+                if j!=color and temp_position[j]!=position[j]:
+                    print 'capture'
+                    return temp_position,roll(),move_made
+    position = temp
     if move == 6:
         for coin_number in which_coins:
-            if color == 'red':
-                position, move_made = is_coin_present(position,color,2,coin_number)
-            elif color == 'blue':
-                 position, move_made = is_coin_present(position,color,15,coin_number)
-            elif color == 'green':
-                  position, move_made = is_coin_present(position,color,41,coin_number)
-            else:
-                position, move_made = is_coin_present(position,color,28,coin_number)
-            if move_made:
-                return position,roll(),move_made
+            print coin_number
+            if position[color][coin_number] not in PATH:
+                if color == 'red':
+                    position, move_made = is_coin_present(position,color,2,coin_number)
+                elif color == 'blue':
+                     position, move_made = is_coin_present(position,color,15,coin_number)
+                elif color == 'green':
+                      position, move_made = is_coin_present(position,color,41,coin_number)
+                else:
+                    position, move_made = is_coin_present(position,color,28,coin_number)
+                if move_made:
+                    print 'move six'
+                    return position,roll(),move_made
     move_made = False
     no_of_trials = 0
+    temp = []
+    for i in which_coins:
+        if position[color][i] in PATH:
+            temp.append(i)
+    which_coins = temp
+    temp = position.copy()
     for i in which_coins:
         for j in [58,64,70,76]:
+            temp_position = copy.copy(position)
             if position[color][i] == PATH[j-move]:
-                _ ,_ , move_made = coin_move(position,[(color,i)],move,PATH,check_roll = False)
+                _ ,_ , move_made = coin_move(temp_position,[(color,i)],move,PATH,check_roll = False)
                 if move_made:
-                    return position, roll(), move_made
-    while not move_made and no_of_trials <10:
-        temp_position = {}
-        for z in position:
-            temp_position[z] = position[z]
+                    return temp_position, roll(), move_made
+    position = temp
+    while not move_made and no_of_trials <10 and which_coins:
+        temp_position = copy.copy(position)
         temp_position , _ , move_made = coin_move(temp_position,[(color,random.choice(which_coins))],move,PATH,check_roll = False)
         no_of_trials += 1
     if move_made:
+        print "random move made"
         return temp_position, roll(), move_made
+    print "turn passed"
+    position = temp
     return position,roll(),True
 
 
@@ -318,11 +366,13 @@ def did_win(gameDisplay,position,PATH):
         if coin_home == 4:
             gameDisplay.fill(BLACK)
             message_to_screen(color = WHITE, msg = "Player " + i + " won.",where_text = (350,350))
+            time.sleep(10)
             return i
     return -1
 
-def message_to_screen(color,msg = 'PLAYER',where_text = (100,22)):
-    textSurface = medfont.render(msg, True, color)
+def message_to_screen(color,msg = 'PLAYER',where_text = (100,22),small = False):
+    if not small :textSurface = medfont.render(msg, True, color)
+    else: textSurface = smallfont.render(msg, True, color)
     textRect = textSurface.get_rect()
     textRect.center = where_text[0], where_text[1]
     gameDisplay.blit(textSurface, textRect)
@@ -340,7 +390,6 @@ def playercontrol(player):
     elif player == 'yellow':
         message_to_screen(color = BLUE)
         return 'blue'
-AI_list = ['blue','green']
 def gameloop():
     gameOver = False
     gameExit = False
@@ -350,19 +399,19 @@ def gameloop():
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     gameOver = gameExit = True
-        PATH, coin_position = game_initialize()
+        PATH, coin_position, AI_list = game_initialize(gameDisplay)
         player = 'red'
         message_to_screen(color = RED )
         move = roll(12)
         while not gameOver:
             gameDisplay.blit(image,(0,45))
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+            for event in (pygame.event.get() + [1]):
+                if event != 1 and event.type == pygame.QUIT:
                     gameOver = gameExit = True
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                elif event != 1 and event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     player = playercontrol(player)
                     move = roll()
-                elif event.type == pygame.MOUSEBUTTONUP or player in AI_list:
+                elif (event != 1 and event.type == pygame.MOUSEBUTTONUP) or player in AI_list:
                         is_AI_playing = player in AI_list
                         if not is_AI_playing:
                             coin_selected = detect_coin(pygame.mouse.get_pos(),coin_position)

@@ -1,0 +1,34 @@
+Welcome to ludo.
+
+The rules are as follws:
+
+A: INSTRUCTION SCREEN
+
+1> You can press any colored key on your keyboard to play.
+
+2> Once pressed, you cannot undo the keypress.
+
+3> Press P to start the game.
+
+ENJOY
+
+B: GAME RULES
+
+1> The color on the top left indicates which player.
+
+2> Your move is displayed on the right but the computer takes the input directly from there.
+
+3> You need to click on a coin of your color to select it. The coin will move automatically.
+
+4> If you cannot move any of the coins and it is still your turn, no valid move exists. Press Enter to skip your turn.
+
+5> If you land on another player's coin, that coin is captured - that coin returns home and has to start from the begining.
+
+
+C: OBJECTIVE
+
+The objective of the game is to circumnavigate all you coins around the board before other player does the same.
+
+D: END SCREEN
+
+Wait for sometime to restart the game. If you want to quit, just click the 'X' button on the top right.

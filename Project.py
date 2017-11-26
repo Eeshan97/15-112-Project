@@ -400,7 +400,7 @@ def did_win(gameDisplay,position,PATH):
             gameDisplay.fill(BLACK)
             message_to_screen(color = WHITE, msg = "Player " + i + " won.",where_text = (350,350))
             message_to_screen(color = WHITE, msg = "Wait for 10 seconds to restart.",where_text = (350,450),small = True)
-            message_to_screen(color = RED, msg = "Please do NOT press exit buttor.",where_text = (350,550),small = True)
+            message_to_screen(color = RED, msg = "Please do NOT press exit button.",where_text = (350,550),small = True)
             print "Hurray"
             pygame.display.update()
             time.sleep(10)
